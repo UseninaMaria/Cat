@@ -18,22 +18,29 @@ public class Main {
 
     public static void main(String[] args) throws IOException {
 
-        CloseableHttpClient httpClient = HttpClientBuilder.create()
-                .setUserAgent("Cat Service")
-                .setDefaultRequestConfig(RequestConfig.custom()
-                        .setConnectTimeout(5000) // максимальное время ожидание подключения к серверу
-                        .setSocketTimeout(30000) // максимальное время ожидания получения данных
-                        .setRedirectsEnabled(false) // возможность следовать редиректу в ответе
-                        .build())
-                .build();
-        HttpGet request = new HttpGet(REMOTE_SERVICE_URI);
-        request.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
+       try (CloseableHttpClient httpClient = HttpClientBuilder.create()
+               .setUserAgent("Cat Service")
+               .setDefaultRequestConfig(RequestConfig.custom()
+                       .setConnectTimeout(5000) // максимальное время ожидание подключения к серверу
+                       .setSocketTimeout(30000) // максимальное время ожидания получения данных
+                       .setRedirectsEnabled(false) // возможность следовать редиректу в ответе
+                       .build())
+               .build()) {
 
-        CloseableHttpResponse response = httpClient.execute(request);
+           HttpGet request = new HttpGet(REMOTE_SERVICE_URI);
+           request.setHeader(HttpHeaders.ACCEPT, ContentType.APPLICATION_JSON.getMimeType());
 
-        List<Cat> cat = mapper.readValue(response.getEntity().getContent(), new TypeReference<List<Cat>>() {});
+           try (CloseableHttpResponse response = httpClient.execute(request);) {
+
+               List<Cat> cat = mapper.readValue(response.getEntity().getContent(), new TypeReference<List<Cat>>() {
+               });
 //        cat.forEach(System.out::println);
 //        System.out.println("");
-        cat.stream().filter(value -> value.getUpvotes() != null).forEach(System.out::println);
+               cat.stream().filter(value -> value.getUpvotes() != null && value.getUpvotes() > 0).forEach(System.out::println);
+           }
+       }
+           catch (Exception e) {
+           e.getStackTrace();
+       }
     }
 }
